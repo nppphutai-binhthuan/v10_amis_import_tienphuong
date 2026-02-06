@@ -33,14 +33,15 @@ import {
   Lock,
   Unlock,
   ArrowRight,
-  Gift
+  Gift,
+  FileDigit
 } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import { GroupType, ImportItem, BasicUnitMap } from './types';
-import { processImportData } from './geminiService';
+import { processImportData } from './services/geminiService';
 
 // --- Constants ---
-const SPECIAL_KEYWORDS = ["Vipshop", "ONTOP", "Trả Thưởng", "Tích Lũy", "Trưng Bày"];
+const SPECIAL_KEYWORDS = ["VIPSHOP", "ONTOP", "Trả Thưởng", "Trưng Bày", "Tích Lũy"];
 const DB_NAME = "MisaAmisMasterData";
 const STORE_NAME = "MasterData_V7";
 const SYSTEM_PASSWORD = "admin271235";
@@ -120,7 +121,7 @@ const LoginScreen = ({ onLogin }: { onLogin: (pw: string) => void }) => {
             <Lock className="w-10 h-10 text-white" />
           </div>
           <h1 className="text-3xl font-black text-white tracking-tight uppercase text-center">Security Access</h1>
-          <p className="text-white/50 text-[10px] font-black uppercase tracking-[0.3em] mt-2">MISA AMIS IMPORT PRO V10.2</p>
+          <p className="text-white/50 text-[10px] font-black uppercase tracking-[0.3em] mt-2">MISA AMIS IMPORT PRO V10.3</p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">
@@ -134,7 +135,7 @@ const LoginScreen = ({ onLogin }: { onLogin: (pw: string) => void }) => {
                 ${error ? 'border-red-500 bg-red-500/10 shadow-[0_0_20px_rgba(239,68,68,0.3)]' : 'border-white/10 focus:border-blue-500 focus:bg-white/10'}`}
               autoFocus
             />
-            {error && <p className="text-red-400 text-[10px] font-black uppercase text-center mt-3 animate-bounce">Sai mật khẩu truy cập!</p>}
+            {error && <p className="text-red-400 text-[10px] font-black uppercase text-center mt-3 animate-bounce">Mật khẩu không chính xác!</p>}
           </div>
 
           <button
@@ -251,7 +252,7 @@ const BasicUnitModal = ({
     const ws = XLSX.utils.json_to_sheet(data);
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "MasterData_SQL");
-    XLSX.writeFile(wb, "SQL_Database_Backup.xlsx");
+    XLSX.writeFile(wb, "SQL_Backup_V10.3.xlsx");
   };
 
   const filteredMapEntries = useMemo(() => {
@@ -272,7 +273,7 @@ const BasicUnitModal = ({
             <div className="p-3 bg-indigo-600 rounded-2xl shadow-lg shadow-indigo-200"><PackageSearch className="w-6 h-6 text-white" /></div>
             <div>
               <h2 className="text-xl font-black text-slate-800 tracking-tight uppercase">SQL Master Data Engine</h2>
-              <p className="text-[10px] text-indigo-600 font-black uppercase tracking-[0.2em]">Cấu hình Nhóm & ĐVT chuẩn</p>
+              <p className="text-[10px] text-indigo-600 font-black uppercase tracking-[0.2em]">Cơ sở dữ liệu ĐVT & Nhóm hàng chuẩn</p>
             </div>
           </div>
           <div className="flex items-center gap-3">
@@ -286,15 +287,15 @@ const BasicUnitModal = ({
         <div className="flex-1 overflow-hidden flex flex-col p-8 space-y-6">
           <div className="flex flex-col md:flex-row gap-4 items-center">
              <div className="bg-slate-50 border border-slate-100 rounded-2xl px-6 py-3 flex items-center gap-6 shadow-inner">
-                <div><p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Số Record SQL</p><p className="text-xl font-black text-slate-800">{Object.keys(currentMap).length.toLocaleString()}</p></div>
+                <div><p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Dòng SQL</p><p className="text-xl font-black text-slate-800">{Object.keys(currentMap).length.toLocaleString()}</p></div>
                 <div className="w-px h-8 bg-slate-200"></div>
-                <div><p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Trạng thái</p><div className="flex items-center gap-1 text-emerald-600 font-black text-xs uppercase"><ShieldCheck className="w-3 h-3" /> SQL Encrypted</div></div>
+                <div><p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Engine</p><div className="flex items-center gap-1 text-emerald-600 font-black text-xs uppercase"><ShieldCheck className="w-3 h-3" /> SQL Active</div></div>
              </div>
              <div className="relative flex-1 group">
                 <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-focus-within:text-indigo-600 transition-colors" />
                 <input 
                   type="text" 
-                  placeholder="Tra cứu nhanh mã hàng, tên hoặc nhóm sản phẩm..." 
+                  placeholder="Tra cứu nhanh mã hàng, tên hoặc nhóm..." 
                   className="w-full pl-11 pr-4 py-4 bg-slate-50 border border-slate-200 rounded-2xl text-sm focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 outline-none transition-all font-medium"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
@@ -309,7 +310,7 @@ const BasicUnitModal = ({
                 <span className="col-span-4">Tên Sản Phẩm (SQL)</span>
                 <span className="col-span-3">Nhóm Hàng</span>
                 <span className="col-span-1 text-right">ĐVT</span>
-                <span className="col-span-2 text-right">Thao tác</span>
+                <span className="col-span-2 text-right">Hành Động</span>
               </div>
               <div className="flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-slate-200">
                 {filteredMapEntries.length > 0 ? (
@@ -385,24 +386,24 @@ const BasicUnitModal = ({
                     <input type="file" ref={fileInputRef} className="hidden" accept=".xlsx, .xls" onChange={handleFileChange} />
                     <div className="p-6 bg-indigo-50 rounded-2xl group-hover:scale-110 transition-transform"><UploadCloud className="w-10 h-10 text-indigo-600" /></div>
                     <div className="text-center px-4">
-                      <span className="font-black text-slate-700 block text-sm">CẬP NHẬT DATABASE SQL</span>
+                      <span className="font-black text-slate-700 block text-sm uppercase">Cập nhật SQL Database</span>
                       <span className="text-[10px] text-slate-400 font-bold uppercase tracking-tighter mt-1 block">Tên / Nhóm / Mã / ĐVT</span>
                     </div>
                   </label>
-                  <button onClick={() => { if(confirm("XÁC NHẬN: Bạn muốn xóa toàn bộ và làm mới Database SQL?")) onUpdateMap({}, 'replace'); }} className="w-full py-4 bg-red-50 text-red-600 border border-red-100 rounded-2xl font-black text-xs uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-red-600 hover:text-white transition-all group">
-                    <RefreshCw className="w-4 h-4 group-hover:rotate-180 transition-transform duration-500" /> THAY THẾ TOÀN BỘ SQL
+                  <button onClick={() => { if(confirm("XÓA SẠCH DATABASE ĐỂ LÀM MỚI?")) onUpdateMap({}, 'replace'); }} className="w-full py-4 bg-red-50 text-red-600 border border-red-100 rounded-2xl font-black text-xs uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-red-600 hover:text-white transition-all group">
+                    <RefreshCw className="w-4 h-4 group-hover:rotate-180 transition-transform duration-500" /> RESET SQL DATABASE
                   </button>
                 </div>
               ) : (
                 <div className="bg-indigo-600 rounded-3xl p-6 text-white h-full flex flex-col justify-between shadow-xl animate-in zoom-in duration-300">
                   <div>
                     <div className="flex justify-between items-start mb-6">
-                      <p className="text-[10px] font-black opacity-60 uppercase tracking-widest">Hàng Chờ Cập Nhật</p>
+                      <p className="text-[10px] font-black opacity-60 uppercase tracking-widest">Dữ liệu hàng chờ</p>
                       <button onClick={() => setTempData(null)} className="p-1 hover:bg-white/10 rounded-lg"><X className="w-4 h-4" /></button>
                     </div>
                     <div className="bg-white/10 rounded-2xl p-6 mb-6 text-center">
                        <p className="text-4xl font-black mb-1">{Object.keys(tempData).length.toLocaleString()}</p>
-                       <p className="text-[10px] font-black uppercase opacity-60 tracking-widest">Sản phẩm phát hiện</p>
+                       <p className="text-[10px] font-black uppercase opacity-60 tracking-widest">Bản ghi phát hiện</p>
                     </div>
                     <p className="text-[10px] leading-relaxed opacity-80 font-medium text-center">Đồng bộ Tên/Nhóm/ĐVT vào SQL Master Data.</p>
                   </div>
@@ -432,6 +433,7 @@ export default function App() {
   const [error, setError] = useState<string | null>(null);
   const [isBasicUnitOpen, setIsBasicUnitOpen] = useState(false);
   const [basicUnitMap, setBasicUnitMap] = useState<BasicUnitMap>({});
+  const [originalFileName, setOriginalFileName] = useState<string | null>(null);
 
   const VAT_RATE = 0.08;
 
@@ -491,6 +493,7 @@ export default function App() {
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file || !selectedGroup) return;
+    setOriginalFileName(file.name);
     setError(null);
     setIsProcessing(true);
     const mimeType = file.type || (file.name.endsWith('.pdf') ? 'application/pdf' : 'image/jpeg');
@@ -498,7 +501,7 @@ export default function App() {
     reader.onload = async () => {
       try {
         const base64 = (reader.result as string).split(',')[1];
-        // Sử dụng Gemini 3 Flash V10.2 (Ghi nhận hàng 0 giá & giữ tên nguyên văn)
+        // Sử dụng Gemini 3 Flash V10.3 (Xử lý keywords đặc biệt & đơn giá gốc)
         const rawData = await processImportData(base64, mimeType, selectedGroup);
         
         const processedData = rawData.map(item => {
@@ -509,7 +512,7 @@ export default function App() {
           let note = '';
           let groupName = 'Chưa phân nhóm';
 
-          // LUÔN GIỮ TÊN HÀNG NGUYÊN VĂN TỪ PHIẾU (Yêu cầu quan trọng)
+          // LUÔN GIỮ TÊN HÀNG NGUYÊN VĂN TỪ PHIẾU (Yêu cầu V10.3)
           const slipItemName = item.itemName;
 
           if (item.unit.toLowerCase().includes('lẻ') && mappedInfo?.basicUnit) {
@@ -524,20 +527,16 @@ export default function App() {
             note = item.unitPrice === 0 ? 'Hàng tặng/KM (Khớp SQL)' : 'Khớp SQL Master Data';
           }
 
-          if (item.unitPrice === 0) {
-            if (status !== 'error') status = 'warning';
-          }
-
-          const lowerName = slipItemName.toLowerCase();
-          const specialMatch = SPECIAL_KEYWORDS.find(k => lowerName.includes(k.toLowerCase()));
-          if (specialMatch) {
-            status = 'warning';
-            note = `Tham chiếu đặc biệt: ${specialMatch}`;
+          const upperName = slipItemName.toUpperCase();
+          const foundKeyword = SPECIAL_KEYWORDS.find(k => upperName.includes(k.toUpperCase()));
+          if (foundKeyword) {
+            status = 'success'; // Treat as valid product line in V10.3
+            note = `Dòng hàng đặc biệt: ${foundKeyword}`;
           }
 
           return { 
             ...item, 
-            itemName: slipItemName, // Ép buộc sử dụng tên trích xuất từ phiếu
+            itemName: slipItemName,
             unit: finalUnit, 
             mappingStatus: status, 
             mappingNote: note, 
@@ -576,13 +575,16 @@ export default function App() {
       ];
     });
     const fullData = [];
-    fullData[0] = ["MISA AMIS ETL ENGINE V10.2 - LUÔN GIỮ TÊN HÀNG GỐC & TRÍCH XUẤT ĐẦY ĐỦ HÀNG TẶNG"]; 
+    fullData[0] = ["MISA AMIS ETL ENGINE V10.3 - SPECIAL KEYWORD PROCESSING ENABLED"]; 
     fullData[7] = misaHeaders; 
     misaRows.forEach(row => fullData.push(row)); 
     const ws = XLSX.utils.aoa_to_sheet(fullData);
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "MISA DDH");
-    XLSX.writeFile(wb, `MISA_EXPORT_V10.2_${new Date().getTime()}.xlsx`);
+    
+    // Tên file xuất được đặt theo tên file phiếu giao hàng gốc
+    const baseName = originalFileName ? originalFileName.replace(/\.[^/.]+$/, "") : "MISA_IMPORT";
+    XLSX.writeFile(wb, `${baseName}_XUAT_MISA.xlsx`);
   };
 
   const totalAmount = useMemo(() => results.reduce((acc, curr) => acc + curr.afterDiscountAmount, 0), [results]);
@@ -604,21 +606,24 @@ export default function App() {
           <button className="w-full flex items-center gap-3 px-4 py-3 bg-blue-600/10 text-blue-400 rounded-xl border border-blue-600/20 font-bold hover:bg-blue-600/20 transition-all"><LayoutDashboard className="w-5 h-5" />Dashboard</button>
           <button onClick={() => setIsBasicUnitOpen(true)} className="w-full flex items-center gap-3 px-4 py-3 bg-indigo-600/10 text-indigo-400 border border-indigo-600/20 rounded-2xl group transition-all">
             <PackageSearch className="w-5 h-5 group-hover:scale-110 transition-transform" />
-            <div className="text-left"><span className="font-bold block text-sm uppercase">SQL Master Data</span><span className="text-[10px] opacity-70 uppercase font-black">Ánh xạ Nhóm & ĐVT</span></div>
+            <div className="text-left"><span className="font-bold block text-sm uppercase">SQL Master Data</span><span className="text-[10px] opacity-70 uppercase font-black">Ánh xạ & Kiểm soát</span></div>
           </button>
         </nav>
         <div className="pt-6 border-t border-slate-800 flex flex-col items-center gap-2">
-           <div className="px-3 py-1 bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 rounded-full text-[8px] font-black uppercase tracking-widest flex items-center gap-1"><ShieldCheck className="w-3 h-3" /> Auth: admin271235</div>
-           <div className="opacity-30 text-[9px] font-black uppercase text-center tracking-widest italic tracking-widest">Version 10.2 PRO-FLASH</div>
+           <div className="px-3 py-1 bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 rounded-full text-[8px] font-black uppercase tracking-widest flex items-center gap-1"><ShieldCheck className="w-3 h-3" /> Secure Engine V10.3</div>
+           <div className="opacity-30 text-[9px] font-black uppercase text-center tracking-widest italic tracking-widest">Authorized Access Only</div>
         </div>
       </aside>
 
       <main className="flex-1 overflow-y-auto">
         <header className="bg-white/80 backdrop-blur-md border-b border-slate-200 px-6 py-4 sticky top-0 z-50 flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div><h1 className="text-2xl font-black text-slate-900 tracking-tight flex items-center gap-2 uppercase"><Zap className="w-6 h-6 text-blue-600" />Hệ Thống ETL V10.2</h1></div>
+          <div className="flex items-center gap-4">
+             <h1 className="text-2xl font-black text-slate-900 tracking-tight flex items-center gap-2 uppercase"><Zap className="w-6 h-6 text-blue-600" />ETL Engine V10.3</h1>
+             {originalFileName && <div className="hidden md:flex items-center gap-2 px-3 py-1 bg-slate-100 rounded-lg border border-slate-200"><FileDigit className="w-3 h-3 text-slate-400" /><span className="text-[10px] font-black text-slate-500 uppercase truncate max-w-[200px]">{originalFileName}</span></div>}
+          </div>
           {results.length > 0 && (
             <div className="flex flex-wrap gap-2">
-              <button onClick={() => setResults([])} className="px-4 py-2 border border-slate-300 rounded-xl font-bold text-sm hover:bg-slate-100 transition-all">Làm mới</button>
+              <button onClick={() => { setResults([]); setOriginalFileName(null); }} className="px-4 py-2 border border-slate-300 rounded-xl font-bold text-sm hover:bg-slate-100 transition-all">Làm mới</button>
               <button onClick={exportToMisaTemplate} className="px-6 py-2 bg-blue-600 text-white rounded-xl font-black text-sm flex items-center gap-2 shadow-xl shadow-blue-900/20 hover:bg-blue-700 hover:-translate-y-0.5 transition-all"><FileText className="w-4 h-4" /> XUẤT MISA TEMPLATE</button>
             </div>
           )}
@@ -627,26 +632,26 @@ export default function App() {
         <div className="p-6 max-w-[1750px] mx-auto space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <StatCard title="Số Đơn Hàng" value={String(new Set(results.map(r => r.orderId)).size)} icon={Package} color="bg-blue-600" />
-            <StatCard title="Doanh Số Net (Phiếu)" value={new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(totalAmount)} icon={FileSpreadsheet} color="bg-indigo-600" />
-            <StatCard title="Số Dòng Phân Tích" value={String(results.length)} icon={ShoppingBag} color="bg-emerald-600" />
+            <StatCard title="Giá Trị Net Phiếu" value={new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(totalAmount)} icon={FileSpreadsheet} color="bg-indigo-600" />
+            <StatCard title="Hạng Mục ETL" value={String(results.length)} icon={ShoppingBag} color="bg-emerald-600" />
           </div>
 
           {!results.length && (
             <div className="bg-white p-8 rounded-3xl shadow-sm border border-slate-200">
-              <h2 className="text-xl font-black mb-6 flex items-center gap-2 text-slate-800 uppercase tracking-tighter"><Settings2 className="w-5 h-5 text-blue-600" />Chọn nhóm phân tích:</h2>
+              <h2 className="text-xl font-black mb-6 flex items-center gap-2 text-slate-800 uppercase tracking-tighter"><Settings2 className="w-5 h-5 text-blue-600" />Cấu hình trích xuất V10.3:</h2>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-                <GroupCard type={GroupType.KIDO} isSelected={selectedGroup === GroupType.KIDO} onClick={() => setSelectedGroup(GroupType.KIDO)} description="KIDO: Lấy mã [xxxx], giữ tên nguyên văn, hỗ trợ hàng KM giá 0." color="text-red-600 border-red-200" />
-                <GroupCard type={GroupType.UNICHARM} isSelected={selectedGroup === GroupType.UNICHARM} onClick={() => setSelectedGroup(GroupType.UNICHARM)} description="UNICHARM: Tách số dính OCR, trích xuất đầy đủ danh mục hàng tặng." color="text-blue-600 border-blue-200" />
-                <GroupCard type={GroupType.COLGATE} isSelected={selectedGroup === GroupType.COLGATE} onClick={() => setSelectedGroup(GroupType.COLGATE)} description="COLGATE: Xử lý mã quà tặng CP, giữ tên tham chiếu chính xác." color="text-yellow-600 border-yellow-200" />
-                <GroupCard type={GroupType.KIOTVIET_NPP} isSelected={selectedGroup === GroupType.KIOTVIET_NPP} onClick={() => setSelectedGroup(GroupType.KIOTVIET_NPP)} description="KIOTVIET: Clean mã hậu tố _TH, trích xuất 100% dòng hàng." color="text-indigo-600 border-indigo-200" />
+                <GroupCard type={GroupType.KIDO} isSelected={selectedGroup === GroupType.KIDO} onClick={() => setSelectedGroup(GroupType.KIDO)} description="KIDO Logic: Tách mã [xxxx], giữ nguyên Tên & Đơn giá các dòng VIPSHOP/ONTOP." color="text-red-600 border-red-200" />
+                <GroupCard type={GroupType.UNICHARM} isSelected={selectedGroup === GroupType.UNICHARM} onClick={() => setSelectedGroup(GroupType.UNICHARM)} description="UNICHARM Logic: Tách OCR dính số, trích xuất đầy đủ dòng quà tặng KM." color="text-blue-600 border-blue-200" />
+                <GroupCard type={GroupType.COLGATE} isSelected={selectedGroup === GroupType.COLGATE} onClick={() => setSelectedGroup(GroupType.COLGATE)} description="COLGATE Logic: Ưu tiên mã quà tặng CP, giữ tên tham chiếu nguyên bản." color="text-yellow-600 border-yellow-200" />
+                <GroupCard type={GroupType.KIOTVIET_NPP} isSelected={selectedGroup === GroupType.KIOTVIET_NPP} onClick={() => setSelectedGroup(GroupType.KIOTVIET_NPP)} description="KIOTVIET: Loại bỏ hậu tố -TH, trích xuất 100% dòng sản phẩm & trả thưởng." color="text-indigo-600 border-indigo-200" />
               </div>
               {selectedGroup && (
                 <div className="flex flex-col items-center justify-center border-4 border-dashed border-slate-100 rounded-3xl p-16 bg-slate-50/50 hover:border-blue-200 transition-all group relative overflow-hidden">
                   <div className="bg-white p-6 rounded-3xl shadow-lg mb-6 group-hover:scale-110 transition-transform relative z-10">{isProcessing ? <Loader2 className="w-16 h-16 text-blue-600 animate-spin" /> : <UploadCloud className="w-16 h-16 text-blue-600" />}</div>
                   <label className="mt-8 cursor-pointer relative z-10 text-center">
                     <input type="file" accept=".pdf,image/*" className="hidden" onChange={handleFileUpload} disabled={isProcessing} />
-                    <span className="px-12 py-5 bg-blue-600 hover:bg-blue-700 text-white rounded-2xl font-black transition-all shadow-xl inline-block text-lg tracking-widest uppercase">{isProcessing ? 'ĐANG TRÍCH XUẤT 100% DỮ LIỆU...' : 'TẢI PHIẾU GIAO HÀNG & THANH TOÁN'}</span>
-                    <p className="mt-4 text-[10px] text-slate-400 font-black uppercase tracking-widest">Hệ thống sẽ lấy tất cả dòng hàng kể cả đơn giá 0</p>
+                    <span className="px-12 py-5 bg-blue-600 hover:bg-blue-700 text-white rounded-2xl font-black transition-all shadow-xl inline-block text-lg tracking-widest uppercase">{isProcessing ? 'ĐANG TRÍCH XUẤT SIÊU TỐC...' : 'TẢI PHIẾU GIAO HÀNG & THANH TOÁN'}</span>
+                    <p className="mt-4 text-[10px] text-slate-400 font-black uppercase tracking-widest">V10.3: Hỗ trợ tự động trích xuất VIPSHOP, ONTOP, Trả Thưởng</p>
                   </label>
                 </div>
               )}
@@ -658,11 +663,11 @@ export default function App() {
               <div className="p-6 border-b border-slate-100 bg-slate-50/50 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                 <h2 className="text-lg font-black text-slate-800 flex items-center gap-3 uppercase tracking-tighter">
                   <div className="p-2 bg-blue-600 rounded-lg"><TableIcon className="w-5 h-5 text-white" /></div>
-                  DỮ LIỆU TRÍCH XUẤT & THAM CHIẾU NGUYÊN VĂN
+                  DỮ LIỆU ĐÃ PHÂN TÍCH (THAM CHIẾU NGUYÊN VĂN)
                 </h2>
                 <div className="flex items-center gap-2">
-                   <div className="bg-emerald-100 text-emerald-700 px-3 py-1 rounded-full text-[9px] font-black border border-emerald-200 flex items-center gap-1.5 uppercase tracking-tighter"><CheckCircle2 className="w-3 h-3" /> FULL DATA SYNC</div>
-                   <div className="bg-indigo-100 text-indigo-700 px-3 py-1 rounded-full text-[9px] font-black border border-indigo-200 uppercase tracking-tighter">{selectedGroup} LOGIC V10.2</div>
+                   <div className="bg-emerald-100 text-emerald-700 px-3 py-1 rounded-full text-[9px] font-black border border-emerald-200 flex items-center gap-1.5 uppercase tracking-tighter"><CheckCircle2 className="w-3 h-3" /> OCR SYNC READY</div>
+                   <div className="bg-indigo-100 text-indigo-700 px-3 py-1 rounded-full text-[9px] font-black border border-indigo-200 uppercase tracking-tighter">{selectedGroup} LOGIC V10.3</div>
                 </div>
               </div>
               <div className="overflow-x-auto scrollbar-thin scrollbar-thumb-slate-200">
@@ -672,7 +677,7 @@ export default function App() {
                       <th className="px-6 py-4 w-10 text-center">STT</th>
                       <th className="px-6 py-4">Mã Hàng</th>
                       <th className="px-6 py-4">Tên Hàng Hóa (Tham Chiếu Phiếu Gốc)</th>
-                      <th className="px-6 py-4">Nhóm Ngành (SQL)</th>
+                      <th className="px-6 py-4">Nhóm Hàng (SQL)</th>
                       <th className="px-6 py-4 text-center">ĐVT</th>
                       <th className="px-6 py-4 text-right">Số Lượng</th>
                       <th className="px-6 py-4 text-right">Đơn Giá</th>
@@ -680,7 +685,7 @@ export default function App() {
                       <th className="px-6 py-4 text-right bg-indigo-50/30">Tiền -vat</th>
                       <th className="px-6 py-4 text-center">CK%</th>
                       <th className="px-6 py-4 text-right font-black text-blue-800 bg-blue-50/10">Thanh toán</th>
-                      <th className="px-6 py-4 text-right font-black bg-slate-100">Ghi chú Mapping</th>
+                      <th className="px-6 py-4 text-right font-black bg-slate-100">Ghi chú V10.3</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100 text-sm font-medium">
@@ -688,12 +693,15 @@ export default function App() {
                       const upVat = Math.round(item.unitPrice / (1 + VAT_RATE));
                       const amVat = Math.round(item.amount / (1 + VAT_RATE));
                       const isFree = item.unitPrice === 0;
+                      const hasSpecialKeyword = SPECIAL_KEYWORDS.some(k => item.itemName.toUpperCase().includes(k.toUpperCase()));
+                      
                       return (
-                        <tr key={idx} className={`hover:bg-blue-50/30 transition-colors group ${item.mappingStatus === 'error' ? 'bg-red-50/10' : isFree ? 'bg-amber-50/20' : ''}`}>
+                        <tr key={idx} className={`hover:bg-blue-50/30 transition-colors group ${item.mappingStatus === 'error' ? 'bg-red-50/10' : hasSpecialKeyword ? 'bg-indigo-50/20' : isFree ? 'bg-amber-50/20' : ''}`}>
                           <td className="px-6 py-4 text-center font-black text-slate-300">{idx + 1}</td>
                           <td className="px-6 py-4 font-mono text-xs font-black text-slate-500 uppercase">{item.itemCode}</td>
                           <td className="px-6 py-4 text-slate-700 font-bold truncate max-w-[450px] flex items-center gap-2">
-                             {isFree && <Gift className="w-3.5 h-3.5 text-amber-500 flex-shrink-0" />}
+                             {hasSpecialKeyword && <Zap className="w-3.5 h-3.5 text-blue-500 flex-shrink-0" />}
+                             {isFree && !hasSpecialKeyword && <Gift className="w-3.5 h-3.5 text-amber-500 flex-shrink-0" />}
                              {item.itemName}
                           </td>
                           <td className="px-6 py-4">
@@ -705,7 +713,7 @@ export default function App() {
                             <span className="px-2 py-0.5 bg-slate-100 rounded text-[10px] font-black uppercase">{item.unit}</span>
                           </td>
                           <td className="px-6 py-4 text-right font-black text-slate-900">{item.quantity}</td>
-                          <td className={`px-6 py-4 text-right font-black ${isFree ? 'text-amber-600' : 'text-slate-400'}`}>
+                          <td className={`px-6 py-4 text-right font-black ${isFree ? 'text-amber-600' : hasSpecialKeyword ? 'text-blue-600' : 'text-slate-400'}`}>
                             {isFree ? '0 (Hàng tặng)' : new Intl.NumberFormat('vi-VN').format(item.unitPrice)}
                           </td>
                           <td className="px-6 py-4 text-right font-bold text-indigo-600 bg-indigo-50/5">{new Intl.NumberFormat('vi-VN').format(upVat)}</td>
@@ -713,7 +721,7 @@ export default function App() {
                           <td className="px-6 py-4 text-center text-emerald-600 font-black">{item.discountRate}%</td>
                           <td className="px-6 py-4 text-right font-black text-blue-800 bg-blue-50/5">{new Intl.NumberFormat('vi-VN').format(item.afterDiscountAmount)}</td>
                           <td className="px-6 py-4 text-right text-[10px] font-bold">
-                            <span className={`${item.mappingStatus === 'error' ? 'text-red-600' : isFree ? 'text-amber-600' : 'text-emerald-600'}`}>
+                            <span className={`${item.mappingStatus === 'error' ? 'text-red-600' : hasSpecialKeyword ? 'text-indigo-600' : isFree ? 'text-amber-600' : 'text-emerald-600'}`}>
                               {item.mappingNote}
                             </span>
                           </td>
