@@ -12,7 +12,7 @@ const RESPONSE_SCHEMA = {
       orderId: { type: Type.STRING, description: "Số đơn hàng" },
       customerName: { type: Type.STRING, description: "Tên khách hàng" },
       itemCode: { type: Type.STRING, description: "Mã hàng" },
-      itemName: { type: Type.STRING, description: "Tên hàng trích xuất CHÍNH XÁC NGUYÊN VĂN từ nội dung văn bản trên phiếu. Không tự ý sửa đổi." },
+      itemName: { type: Type.STRING, description: "Tên hàng trích xuất CHÍNH XÁC NGUYÊN VĂN từ nội dung văn bản trên phiếu. Bao gồm cả các hậu tố hoặc tiền tố như VIPSHOP, ONTOP, Trả Thưởng, Trưng Bày nếu có." },
       quantity: { type: Type.NUMBER, description: "Số lượng" },
       unit: { type: Type.STRING, description: "Đơn vị tính" },
       unitPrice: { type: Type.NUMBER, description: "Đơn giá (Trích xuất đúng giá trị trên phiếu, chấp nhận giá trị 0)" },
@@ -32,23 +32,24 @@ export const processImportData = async (
   group: GroupType
 ): Promise<ImportItem[]> => {
   const systemInstructions = `
-    Bạn là "MISA AMIS IMPORT PRO" (V10.2) - Hệ thống ETL Siêu tốc & Chính xác tuyệt đối.
+    Bạn là "MISA AMIS IMPORT PRO" (V10.3) - Chuyên gia trích xuất dữ liệu ETL đa nền tảng.
     Mật khẩu hệ thống: admin271235.
     
-    NHIỆM VỤ: Trích xuất dữ liệu từ Phiếu Giao Hàng & Thanh Toán.
+    NHIỆM VỤ: Trích xuất dữ liệu từ Phiếu Giao Hàng & Thanh Toán cho các nhóm [KIDO, Unicharm, Colgate, KIOTVIET].
     
-    CÁC QUY TẮC BẮT BUỘC (NẾU VI PHẠM SẼ LỖI HỆ THỐNG):
-    1. HÀNG TẶNG/KM: Trích xuất 100% tất cả các dòng hàng có trên phiếu. Tuyệt đối KHÔNG bỏ sót các dòng có Đơn giá = 0 hoặc Hàng khuyến mại.
-    2. TÊN HÀNG HÓA: Phải lấy CHÍNH XÁC NGUYÊN VĂN chuỗi ký tự hiển thị trên phiếu (Ví dụ: "DG PAL Duong Am 6gx880"). Tuyệt đối KHÔNG tự ý thay đổi, không sửa lỗi chính tả, không dịch sang tên đầy đủ.
-    3. MÃ HÀNG: Trích xuất đầy đủ mã số/ký hiệu đi kèm sản phẩm.
-    
-    LOGIC TỐI ƯU CHO ${group}:
-    - UNICHARM: Tách số dính (ví dụ "10gói" -> 10 và gói). Xử lý hàng tặng Unicharm thường nằm ở cuối danh mục.
-    - KIDO: Lấy mã trong [xxxx]. Giữ nguyên tên viết tắt của Kido.
-    - COLGATE: Lấy đầy đủ các mã CP (Promotion) có đơn giá 0.
-    - KIOTVIET_NPP: Xóa hậu tố _TH/-TH ở mã hàng nhưng giữ nguyên Tên hàng hóa.
+    YÊU CẦU ĐẶC BIỆT V10.3:
+    1. XỬ LÝ HẠNG MỤC RIÊNG: Các nội dung chứa từ khóa "VIPSHOP", "ONTOP", "Trả Thưởng", "Trưng Bày" phải được trích xuất thành một dòng hàng/sản phẩm độc lập nếu chúng xuất hiện dưới dạng dòng hàng trên phiếu.
+    2. ĐƠN GIÁ & THÀNH TIỀN: Phải trích xuất đầy đủ Đơn giá và Thành tiền cho các dòng này để phục vụ Misa Template. Không được bỏ qua ngay cả khi giá trị đặc biệt.
+    3. NGUYÊN VĂN TÊN HÀNG: Giữ 100% nguyên văn chuỗi ký tự Tên hàng hóa từ OCR. Không tự ý sửa đổi, không bỏ bớt chữ.
+    4. KHÔNG BỎ SÓT: Trích xuất mọi dòng hàng có Số lượng > 0, kể cả Đơn giá = 0.
 
-    YÊU CẦU PHẢN HỒI: Chỉ trả về JSON ARRAY. Không giải thích. Tốc độ cực nhanh.
+    LOGIC NHÓM - ${group}:
+    - KIDO: Lấy mã trong [xxxx].
+    - UNICHARM: Tách số dính OCR (10thùng -> 10 và thùng).
+    - COLGATE: Trích xuất mã CP khuyến mại.
+    - KIOTVIET_NPP: Làm sạch mã hàng nhưng giữ nguyên Tên hàng hóa.
+
+    YÊU CẦU PHẢN HỒI: Trả về JSON ARRAY. Không giải giải thích thêm.
   `;
 
   const response = await ai.models.generateContent({
@@ -57,7 +58,7 @@ export const processImportData = async (
       {
         parts: [
           { inlineData: { data: fileBase64, mimeType: mimeType } },
-          { text: `Trích xuất TOÀN BỘ dòng hàng từ phiếu ${group}. Giữ nguyên Tên hàng nguyên văn. Không bỏ sót hàng đơn giá 0.` }
+          { text: `Trích xuất phiếu ${group}. Đặc biệt lưu ý các dòng chứa VIPSHOP, ONTOP, Trả Thưởng, Trưng Bày. Giữ nguyên đơn giá.` }
         ]
       }
     ],
@@ -70,11 +71,11 @@ export const processImportData = async (
   });
 
   const text = response.text;
-  if (!text) throw new Error("Hệ thống AI không phản hồi.");
+  if (!text) throw new Error("Hệ thống AI không phản hồi dữ liệu.");
   
   try {
     return JSON.parse(text);
   } catch (e) {
-    throw new Error("Lỗi cấu trúc dữ liệu trích xuất.");
+    throw new Error("Lỗi cấu trúc JSON trích xuất từ AI.");
   }
 };
