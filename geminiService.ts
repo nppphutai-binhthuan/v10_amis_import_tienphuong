@@ -9,20 +9,21 @@ const RESPONSE_SCHEMA = {
   items: {
     type: Type.OBJECT,
     properties: {
-      orderId: { type: Type.STRING, description: "Số đơn hàng" },
+      orderId: { type: Type.STRING, description: "Số đơn hàng / Số phiếu giao hàng / Số HĐ trích xuất từ phiếu" },
       customerName: { type: Type.STRING, description: "Tên khách hàng" },
+      salesPerson: { type: Type.STRING, description: "Tên nhân viên bán hàng hoặc người giao hàng (NVBH / NV)" },
       itemCode: { type: Type.STRING, description: "Mã hàng" },
-      itemName: { type: Type.STRING, description: "Tên hàng trích xuất CHÍNH XÁC NGUYÊN VĂN từ nội dung văn bản trên phiếu. Bao gồm cả các hậu tố hoặc tiền tố như VIPSHOP, ONTOP, Trả Thưởng, Trưng Bày nếu có." },
+      itemName: { type: Type.STRING, description: "Tên hàng trích xuất CHÍNH XÁC NGUYÊN VĂN từ nội dung văn bản trên phiếu (Ví dụ: DG PAL Duong Am). Không tự sửa đổi." },
       quantity: { type: Type.NUMBER, description: "Số lượng" },
-      unit: { type: Type.STRING, description: "Đơn vị tính" },
-      unitPrice: { type: Type.NUMBER, description: "Đơn giá (Trích xuất đúng giá trị trên phiếu, chấp nhận giá trị 0)" },
-      amount: { type: Type.NUMBER, description: "Thành tiền trước KM (Chấp nhận giá trị 0)" },
+      unit: { type: Type.STRING, description: "Đơn vị tính hiển thị trên phiếu" },
+      unitPrice: { type: Type.NUMBER, description: "Đơn giá (Nếu là hàng tặng/KM thì đơn giá bằng 0)" },
+      amount: { type: Type.NUMBER, description: "Thành tiền trước KM" },
       discountRate: { type: Type.NUMBER, description: "Tỷ lệ CK (%)" },
       discountAmount: { type: Type.NUMBER, description: "Tiền chiết khấu" },
-      afterDiscountAmount: { type: Type.NUMBER, description: "Thành tiền sau KM (Chấp nhận giá trị 0 cho hàng tặng)" },
-      totalPayment: { type: Type.NUMBER, description: "Tổng tiền thanh toán cuối đơn" },
+      afterDiscountAmount: { type: Type.NUMBER, description: "Thành tiền sau KM (Thực tế thanh toán dòng hàng)" },
+      totalPayment: { type: Type.NUMBER, description: "Tổng cộng tiền thanh toán của cả đơn hàng (Footer Total)" },
     },
-    required: ["orderId", "customerName", "itemCode", "itemName", "quantity", "unit", "unitPrice", "amount", "discountRate", "discountAmount", "afterDiscountAmount", "totalPayment"],
+    required: ["orderId", "customerName", "salesPerson", "itemCode", "itemName", "quantity", "unit", "unitPrice", "amount", "discountRate", "discountAmount", "afterDiscountAmount", "totalPayment"],
   }
 };
 
@@ -32,24 +33,26 @@ export const processImportData = async (
   group: GroupType
 ): Promise<ImportItem[]> => {
   const systemInstructions = `
-    Bạn là "MISA AMIS IMPORT PRO" (V10.3) - Chuyên gia trích xuất dữ liệu ETL đa nền tảng.
+    Bạn là "MISA AMIS IMPORT PRO" (V10.5) - Chuyên gia ETL trích xuất dữ liệu hóa đơn/phiếu giao hàng siêu cấp.
     Mật khẩu hệ thống: admin271235.
     
-    NHIỆM VỤ: Trích xuất dữ liệu từ Phiếu Giao Hàng & Thanh Toán cho các nhóm [KIDO, Unicharm, Colgate, KIOTVIET].
-    
-    YÊU CẦU ĐẶC BIỆT V10.3:
-    1. XỬ LÝ HẠNG MỤC RIÊNG: Các nội dung chứa từ khóa "VIPSHOP", "ONTOP", "Trả Thưởng", "Trưng Bày" phải được trích xuất thành một dòng hàng/sản phẩm độc lập nếu chúng xuất hiện dưới dạng dòng hàng trên phiếu.
-    2. ĐƠN GIÁ & THÀNH TIỀN: Phải trích xuất đầy đủ Đơn giá và Thành tiền cho các dòng này để phục vụ Misa Template. Không được bỏ qua ngay cả khi giá trị đặc biệt.
-    3. NGUYÊN VĂN TÊN HÀNG: Giữ 100% nguyên văn chuỗi ký tự Tên hàng hóa từ OCR. Không tự ý sửa đổi, không bỏ bớt chữ.
-    4. KHÔNG BỎ SÓT: Trích xuất mọi dòng hàng có Số lượng > 0, kể cả Đơn giá = 0.
+    NHIỆM VỤ CHIẾN LƯỢC V10.5 (ĐỒNG BỘ LOGIC COLGATE):
+    1. TRÍCH XUẤT NHÂN VIÊN: Tìm và trích xuất chính xác tên Nhân viên bán hàng (NVBH) hoặc Nhân viên giao hàng có trên phiếu.
+    2. ĐỒNG BỘ LOGIC [COLGATE]: Áp dụng toàn bộ tính năng cao cấp của KIDO và UNICHARM cho Colgate. 
+       - Trích xuất 100% dòng hàng tặng/KM (Đơn giá 0) thành các dòng hàng riêng biệt.
+       - Xử lý tách số dính OCR (Ví dụ: "10thùng", "5hộp" -> tách số và chữ).
+       - Giữ nguyên Tên hàng nguyên văn (bao gồm cả VIPSHOP, ONTOP, Trả Thưởng).
+    3. HÀNG TẶNG / KHUYẾN MẠI: Mọi dòng có số lượng nhưng đơn giá 0 hoặc ghi chú KM phải được trích xuất đầy đủ thông tin.
+    4. TÊN HÀNG NGUYÊN VĂN: Tuyệt đối giữ nguyên chuỗi ký tự hiển thị trên phiếu. Không tự ý "làm sạch" hay "chuẩn hóa" tên sản phẩm.
+    5. SỐ PHIẾU/SỐ HĐ: Tìm và gán Số phiếu/Số HĐ cho mọi dòng hàng trích xuất được.
 
-    LOGIC NHÓM - ${group}:
-    - KIDO: Lấy mã trong [xxxx].
-    - UNICHARM: Tách số dính OCR (10thùng -> 10 và thùng).
-    - COLGATE: Trích xuất mã CP khuyến mại.
-    - KIOTVIET_NPP: Làm sạch mã hàng nhưng giữ nguyên Tên hàng hóa.
+    LOGIC NHÓM CHI TIẾT:
+    - KIDO: Trích xuất mã [xxxx], giữ nguyên Tên & Đơn giá dòng VIPSHOP/ONTOP.
+    - UNICHARM: Tách OCR dính số, phục hồi 100% hàng tặng KM đơn giá 0.
+    - COLGATE (NEW LOGIC): Kết hợp logic của KIDO & UNICHARM. Tập trung trích xuất chính xác mã CP (Promotion), xử lý dính số OCR ở cột ĐVT/Số lượng, và đảm bảo không bỏ sót bất kỳ dòng quà tặng KM nào.
+    - KIOTVIET_NPP: Loại bỏ hậu tố -TH nhưng giữ nguyên Tên hàng.
 
-    YÊU CẦU PHẢN HỒI: Trả về JSON ARRAY. Không giải giải thích thêm.
+    YÊU CẦU: Trả về JSON ARRAY duy nhất. Không giải thích. Xử lý với latency thấp nhất.
   `;
 
   const response = await ai.models.generateContent({
@@ -58,7 +61,7 @@ export const processImportData = async (
       {
         parts: [
           { inlineData: { data: fileBase64, mimeType: mimeType } },
-          { text: `Trích xuất phiếu ${group}. Đặc biệt lưu ý các dòng chứa VIPSHOP, ONTOP, Trả Thưởng, Trưng Bày. Giữ nguyên đơn giá.` }
+          { text: `Phân tích phiếu ${group} với logic V10.5. Trích xuất đầy đủ hàng tặng KM, Nhân viên bán hàng và xử lý dính số OCR.` }
         ]
       }
     ],
@@ -71,11 +74,11 @@ export const processImportData = async (
   });
 
   const text = response.text;
-  if (!text) throw new Error("Hệ thống AI không phản hồi dữ liệu.");
+  if (!text) throw new Error("AI Studio không phản hồi dữ liệu.");
   
   try {
     return JSON.parse(text);
   } catch (e) {
-    throw new Error("Lỗi cấu trúc JSON trích xuất từ AI.");
+    throw new Error("Lỗi cấu trúc dữ liệu AI V10.5.");
   }
 };
