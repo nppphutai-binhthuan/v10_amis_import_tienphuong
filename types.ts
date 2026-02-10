@@ -9,6 +9,7 @@ export enum GroupType {
 export interface ImportItem {
   orderId: string;
   customerName: string;
+  salesPerson: string;
   itemCode: string;
   itemName: string;
   quantity: number;
@@ -19,7 +20,6 @@ export interface ImportItem {
   discountAmount: number;
   afterDiscountAmount: number;
   totalPayment: number;
-  // New tracking fields
   groupName?: string;
   mappingStatus?: 'success' | 'warning' | 'error';
   mappingNote?: string;
@@ -30,6 +30,7 @@ export interface BasicUnitMap {
     itemName: string;
     basicUnit: string;
     groupName?: string;
+    vat?: string; // Mới: Thuế suất mặc định của sản phẩm
   };
 }
 
